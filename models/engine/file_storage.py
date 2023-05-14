@@ -1,57 +1,53 @@
 #!/usr/bin/python3
+
 """
-Module file_storage serializes and
-deserializes JSON types
+This module contains the prototype for FileStorage class.
 """
 
-import json
 from models.base_model import BaseModel
+import json
+from os import path
 from models.user import User
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.place import Place
+from models.review import Review
 
 
-class FileStorage:
-    """
-    Custom class for file storage
-    """
-
+class FileStorage():
+    """FileStorage class."""
     __file_path = "file.json"
     __objects = {}
 
     def all(self):
-        """
-        Returns dictionary representation of all objects
-        """
+        """Returns the dictionary __objects"""
         return self.__objects
 
-    def new(self, object):
-        """sets in __objects the object with the key
-        <object class name>.id
-
-        Args:
-            object(obj): object to write
-
-        """
-        self.__objects[object.__class__.__name__ + '.' + str(object)] = object
+    def new(self, obj):
+        """Sets in __objects the obj with key <obj class name>.id"""
+        k = obj.__class__.__name__ + "." + obj.id
+        self.__objects[k] = obj
 
     def save(self):
-        """
-        serializes __objects to the JSON file
-        (path: __file_path)
-        """
-        with open(self.__file_path, 'w+') as f:
-            json.dump({k: v.to_dict() for k, v in self.__objects.items()
-                       }, f)
+        """Serialises __objects to the JSON file (path: __file_path)"""
+        d = {k: v.to_dict()
+             for k, v in self.__objects.items()}
+        with open(self.__file_path, mode='w') as f:
+            json.dump(d, f)
 
     def reload(self):
+        """Deserialises the JSON file to __objects (only if the JSON file
+        (__file_path) exists ; otherwise, do nothing. If the file doesn’t
+        exist, no exception should be raised)
         """
-        deserializes the JSON file to __objects, if the JSON
-        file exists, otherwise nothing happens)
-        """
-        try:
-            with open(self.__file_path, 'r') as f:
-                dict = json.loads(f.read())
-                for value in dict.values():
-                    cls = value["__class__"]
-                    self.new(eval(cls)(**value))
-        except Exception:
-            pass
+        if path.isfile(self.__file_path):
+            with open(self.__file_path) as f:
+                d = json.load(f)
+                for k, v in d.items():
+                    cls = v["__class__"]
+                    self.new(eval(cls)(**v))
+
+    def reset(self):
+        """Reset all objects in __objects"""
+        self.__objects = {}
